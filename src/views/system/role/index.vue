@@ -114,6 +114,7 @@
             accordion
             show-checkbox
             node-key="id"
+            @check="clickDeal"
           />
         </el-card>
       </el-col>
@@ -264,6 +265,39 @@ export default {
         this.menuLoading = false
         console.log(err.response.data.message)
       })
+    },
+    // 点击复选框事件
+    clickDeal(currentObj, treeStatus) {
+      // 用于：父子节点严格互不关联时，父节点勾选变化时通知子节点同步变化，实现单向关联。
+      const selected = treeStatus.checkedKeys.indexOf(currentObj.id) !== -1 // -1未选中
+      // 选中
+      if (selected) {
+        // 子节点只要被选中父节点就被选中
+        this.selectedParent(currentObj)
+        // 统一处理子节点为相同的勾选状态
+        this.uniteChildSame(currentObj, true)
+      } else {
+        // 未选中 处理子节点全部未选中
+        this.uniteChildSame(currentObj, false)
+      }
+    },
+    // 统一处理子节点为相同的勾选状态
+    uniteChildSame(treeList, isSelected) {
+      this.$refs.menu.setChecked(treeList.id, isSelected)
+      const childLen = treeList.children ? treeList.children.length : 0
+      if (childLen) {
+        for (let i = 0; i < childLen; i++) {
+          this.uniteChildSame(treeList.children[i], isSelected)
+        }
+      }
+    },
+    // 统一处理父节点为选中
+    selectedParent(currentObj) {
+      const currentNode = this.$refs.menu.getNode(currentObj)
+      if (currentNode.parent.key !== undefined) {
+        this.$refs.menu.setChecked(currentNode.parent, true)
+        this.selectedParent(currentNode.parent)
+      }
     },
     // 改变数据
     update() {
